@@ -10,4 +10,8 @@ app.get('/', (req, res) => {
   res.status(200).json({ message: 'Welcome to the Schedule API' });
 });
 
+
+const scheduleRoutes = require('./routes/schedules');
+app.use('/schedules', scheduleRoutes);
+
 module.exports = { app };
