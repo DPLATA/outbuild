@@ -34,4 +34,26 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.get('/:scheduleId', async (req, res) => {
+    try {
+      const { scheduleId } = req.params;
+  
+      const schedule = await Schedule.findByPk(scheduleId, {
+        include: [{
+          model: Activity,
+          as: 'activities'
+        }]
+      });
+  
+      if (!schedule) {
+        return res.status(404).json({ error: 'Schedule not found' });
+      }
+  
+      res.status(200).json(schedule);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;
