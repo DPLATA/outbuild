@@ -78,4 +78,84 @@ describe('API Endpoints', () => {
       expect(response.body).toHaveProperty('error');
     });
   });
+
+  describe('GET /schedules/:scheduleId', () => {
+    let user, schedule, activities;
+
+    beforeEach(async () => {
+      // Create a test user
+      user = await User.create({
+        username: `testuser${Date.now()}`,
+        email: `test${Date.now()}@example.com`,
+        passwordHash: 'hashedpassword'
+      });
+
+      // Create a test schedule
+      schedule = await Schedule.create({
+        userId: user.userId,
+        name: 'Test Schedule',
+        imageUrl: 'http://example.com/image.jpg'
+      });
+
+      // Create some test activities
+      activities = await Promise.all([
+        Activity.create({
+          scheduleId: schedule.scheduleId,
+          name: 'Activity 1',
+          startDate: new Date('2023-01-01T09:00:00'),
+          endDate: new Date('2023-01-01T10:00:00')
+        }),
+        Activity.create({
+          scheduleId: schedule.scheduleId,
+          name: 'Activity 2',
+          startDate: new Date('2023-01-01T11:00:00'),
+          endDate: new Date('2023-01-01T12:00:00')
+        })
+      ]);
+    });
+
+    it('should return a schedule with its activities', async () => {
+      const response = await request(app).get(`/schedules/${schedule.scheduleId}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('scheduleId', schedule.scheduleId);
+      expect(response.body).toHaveProperty('name', schedule.name);
+      expect(response.body).toHaveProperty('imageUrl', schedule.imageUrl);
+      expect(response.body).toHaveProperty('activities');
+      expect(response.body.activities).toHaveLength(2);
+      expect(response.body.activities[0]).toHaveProperty('name', 'Activity 1');
+      expect(response.body.activities[1]).toHaveProperty('name', 'Activity 2');
+    });
+
+    it('should return 404 if schedule does not exist', async () => {
+      const nonExistentId = 9999;
+      const response = await request(app).get(`/schedules/${nonExistentId}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty('error', 'Schedule not found');
+    });
+
+    it('should return an empty activities array if the schedule has no activities', async () => {
+      // Create a new schedule without activities
+      const emptySchedule = await Schedule.create({
+        userId: user.userId,
+        name: 'Empty Schedule',
+        imageUrl: 'http://example.com/empty.jpg'
+      });
+
+      const response = await request(app).get(`/schedules/${emptySchedule.scheduleId}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('scheduleId', emptySchedule.scheduleId);
+      expect(response.body).toHaveProperty('activities');
+      expect(response.body.activities).toHaveLength(0);
+    });
+
+    it('should handle invalid scheduleId parameter', async () => {
+      const response = await request(app).get('/schedules/invalidId');
+
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error', 'Internal server error');
+    });
+  });
 });
