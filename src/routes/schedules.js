@@ -1,26 +1,24 @@
-// In your routes file (e.g., routes/schedules.js)
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user');  // Adjust the path as needed
-const Activity = require('../models/activity');  // Adjust the path as needed
-const Schedule = require('../models/schedule');  // Adjust the path as needed
+const User = require('../models/user');
+const Activity = require('../models/activity');
+const Schedule = require('../models/schedule');
+const sequelize = require('../config/database');
+
 
 router.post('/', async (req, res) => {
   try {
     const { userId, name, imageUrl } = req.body;
 
-    // Check if all required fields are present
     if (!userId || !name) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Check if the user exists
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Create the schedule
     const schedule = await Schedule.create({
       userId,
       name,
@@ -51,6 +49,76 @@ router.get('/:scheduleId', async (req, res) => {
   
       res.status(200).json(schedule);
     } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.post('/:scheduleId/activities', async (req, res) => {
+    try {
+      const { scheduleId } = req.params;
+      const { name, startDate, endDate } = req.body;
+  
+      if (!name || !startDate || !endDate) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+  
+      const schedule = await Schedule.findByPk(scheduleId);
+      if (!schedule) {
+        return res.status(404).json({ error: 'Schedule not found' });
+      }
+  
+      const activity = await Activity.create({
+        scheduleId,
+        name,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate)
+      });
+  
+      res.status(201).json(activity);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.post('/:scheduleId/bulk-activities', async (req, res) => {
+    const t = await sequelize.transaction();
+  
+    try {
+      const { scheduleId } = req.params;
+      const { activities } = req.body;
+  
+      if (!Array.isArray(activities) || activities.length === 0) {
+        return res.status(400).json({ error: 'Invalid or empty activities array' });
+      }
+  
+      const schedule = await Schedule.findByPk(scheduleId);
+      if (!schedule) {
+        return res.status(404).json({ error: 'Schedule not found' });
+      }
+  
+      for (const activity of activities) {
+        if (!activity.name || !activity.startDate || !activity.endDate) {
+          await t.rollback();
+          return res.status(400).json({ error: 'Missing required fields in one or more activities' });
+        }
+      }
+  
+      const createdActivities = await Activity.bulkCreate(
+        activities.map(activity => ({
+          ...activity,
+          scheduleId,
+          startDate: new Date(activity.startDate),
+          endDate: new Date(activity.endDate)
+        })),
+        { transaction: t }
+      );
+  
+      await t.commit();
+      res.status(201).json(createdActivities);
+    } catch (error) {
+      await t.rollback();
       console.error(error);
       res.status(500).json({ error: 'Internal server error' });
     }

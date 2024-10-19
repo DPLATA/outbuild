@@ -2,7 +2,6 @@ const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 class User extends Model {
-  // Associations can be defined here
   static associate(models) {
     this.hasMany(models.Schedule, { foreignKey: 'userId', as: 'schedules' });
   }
