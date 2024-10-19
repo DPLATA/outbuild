@@ -4,19 +4,21 @@ const User = require('../models/user');
 const Activity = require('../models/activity');
 const Schedule = require('../models/schedule');
 const sequelize = require('../config/database');
+const { AppError } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
 
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   try {
     const { userId, name, imageUrl } = req.body;
 
     if (!userId || !name) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      throw new AppError(400, 'Missing required fields');
     }
 
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      throw new AppError(404, 'User not found');
     }
 
     const schedule = await Schedule.create({
@@ -25,10 +27,10 @@ router.post('/', async (req, res) => {
       imageUrl
     });
 
+    logger.info(`Schedule created with ID: ${schedule.scheduleId}`);
     res.status(201).json(schedule);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
