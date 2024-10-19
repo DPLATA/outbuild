@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
     "test": "jest --detectOpenHandles --forceExit",
     "db:up": "docker-compose up -d",
+    "actionsdb:up": "docker compose up -d",
     "db:down": "docker-compose down",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo"
