@@ -36,4 +36,4 @@ jobs:
           echo "DB_NAME=${{ vars.DB_NAME }}" >> .env
 
       - name: Start database
-        run: npm run db:up
+        run: npm run actionsdb:up
