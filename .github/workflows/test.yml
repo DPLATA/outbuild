@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  DB_USER: ${{ vars.DB_USER }}
-  DB_PASS: ${{ vars.DB_PASS }}
-  DB_NAME: ${{ vars.DB_NAME }}
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -39,6 +34,13 @@ jobs:
 
       - name: Start database
         run: npm run actionsdb:up
+      
+      - name: Debug Docker
+        run: |
+          docker ps
+          docker logs $(docker ps -q)
+          docker network ls
+          netstat -tulpn
 
       - name: Wait for PostgreSQL
         run: |
