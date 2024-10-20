@@ -8,6 +8,7 @@ const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { validate } = require('../middleware/validation');
 const { verifyScheduleOwnership } = require('../middleware/ownershipVerification');
+const { apiLimiter } = require('../middleware/apiLimiter');
 const schemas = require('../schemas/validation');
 
 
@@ -37,25 +38,44 @@ router.post('/', validate(schemas.createSchedule), async (req, res, next) => {
   }
 });
 
-router.get('/:scheduleId', verifyScheduleOwnership, async (req, res, next) => {
-    try {
-      const { scheduleId } = req.params;
-  
-      const schedule = await Schedule.findByPk(scheduleId, {
-        include: [{
-          model: Activity,
-          as: 'activities'
-        }]
-      });
-  
-      if (!schedule) {
-        throw new AppError(404, 'Schedule not found');
-      }
-  
-      res.status(200).json(schedule);
-    } catch (error) {
-      next(error);
+router.get('/:scheduleId', verifyScheduleOwnership, apiLimiter, async (req, res, next) => {
+  try {
+    const { scheduleId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const schedule = await Schedule.findByPk(scheduleId, {
+      include: [{
+        model: Activity,
+        as: 'activities',
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        order: [['startDate', 'ASC']]
+      }],
+    });
+
+    if (!schedule) {
+      throw new AppError(404, 'Schedule not found');
     }
+
+    const totalActivities = await Activity.count({
+      where: { scheduleId }
+    });
+
+    const totalPages = Math.ceil(totalActivities / limit);
+
+    res.status(200).json({
+      schedule,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems: totalActivities,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.post('/:scheduleId/activities', verifyScheduleOwnership, validate(schemas.createActivity), async (req, res, next) => {
