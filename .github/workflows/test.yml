@@ -50,9 +50,10 @@ jobs:
       - name: Run migrations
         run: npm run migrate
         env:
+          CI: true
           DB_USER: myuser
           DB_PASS: mypass
           DB_NAME: outbuild
-          DB_HOST: localhost
+          DB_HOST: db
           DB_PORT: 5432
         

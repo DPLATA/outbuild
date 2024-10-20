@@ -5,7 +5,7 @@ const config = {
   password: process.env.DB_PASS || '',
   database: process.env.DB_NAME || '',
   //host: process.env.DB_HOST || 'localhost',
-  host: '127.0.0.1',
+  host: process.env.CI ? 'db' : 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   dialect: 'postgres'
 };
