@@ -38,9 +38,9 @@ jobs:
       - name: Debug Docker
         run: |
           docker ps
-          docker logs $(docker ps -q)
+          docker logs outbuild-db-1
           docker network ls
-          netstat -tulpn
+          docker inspect outbuild-db-1
 
       - name: Wait for PostgreSQL
         run: |
