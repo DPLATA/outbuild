@@ -113,17 +113,20 @@ describe('API Endpoints', () => {
       ]);
     });
 
-    it('should return a schedule with its activities', async () => {
+    it('should return a schedule with its activities and pagination', async () => {
       const response = await request(app).get(`/schedules/${schedule.scheduleId}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('scheduleId', schedule.scheduleId);
-      expect(response.body).toHaveProperty('name', schedule.name);
-      expect(response.body).toHaveProperty('imageUrl', schedule.imageUrl);
-      expect(response.body).toHaveProperty('activities');
-      expect(response.body.activities).toHaveLength(2);
-      expect(response.body.activities[0]).toHaveProperty('name', 'Daaaaam les have some fun w thissss!');
-      expect(response.body.activities[1]).toHaveProperty('name', 'Testing baby!');
+      expect(response.body.schedule).toHaveProperty('scheduleId', schedule.scheduleId);
+      expect(response.body.schedule).toHaveProperty('name', schedule.name);
+      expect(response.body.schedule).toHaveProperty('imageUrl', schedule.imageUrl);
+      expect(response.body.schedule).toHaveProperty('activities');
+      expect(response.body.schedule.activities).toHaveLength(2);
+      expect(response.body).toHaveProperty('pagination');
+      expect(response.body.pagination).toHaveProperty('currentPage');
+      expect(response.body.pagination).toHaveProperty('totalPages');
+      expect(response.body.pagination).toHaveProperty('totalItems');
+      expect(response.body.pagination).toHaveProperty('itemsPerPage');
     });
 
     it('should return 404 if schedule does not exist', async () => {
@@ -141,13 +144,14 @@ describe('API Endpoints', () => {
         name: 'Empty Schedule',
         imageUrl: 'http://example.com/empty.jpg'
       });
-
+  
       const response = await request(app).get(`/schedules/${emptySchedule.scheduleId}`);
-
+  
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('scheduleId', emptySchedule.scheduleId);
-      expect(response.body).toHaveProperty('activities');
-      expect(response.body.activities).toHaveLength(0);
+      expect(response.body.schedule).toHaveProperty('scheduleId', emptySchedule.scheduleId);
+      expect(response.body.schedule).toHaveProperty('activities');
+      expect(response.body.schedule.activities).toHaveLength(0);
+      expect(response.body.pagination.totalItems).toBe(0);
     });
 
     it('should handle invalid scheduleId parameter', async () => {
