@@ -37,3 +37,10 @@ jobs:
 
       - name: Start database
         run: npm run actionsdb:up
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+        timeout 30 bash -c 'until docker exec $(docker ps -q --filter name=db) pg_isready; do sleep 1; done'
+
+      - name: Run tests
+        run: npm test
