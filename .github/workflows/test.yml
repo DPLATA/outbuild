@@ -9,6 +9,22 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: myuser
+          POSTGRES_PASSWORD: mypass
+          POSTGRES_DB: outbuild
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v3
       
@@ -21,39 +37,20 @@ jobs:
       - name: Install dependencies  
         run: npm ci
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Create .env file
-        run: |
-          echo "DB_USER=myuser" >> .env
-          echo "DB_PASS=mypass" >> .env
-          echo "DB_NAME=outbuild" >> .env
-          echo "DB_HOST=localhost" >> .env
-          echo "DB_PORT=5432" >> .env
-
-      - name: Start database
-        run: npm run actionsdb:up
-      
-      - name: Debug Docker
-        run: |
-          docker ps
-          docker logs outbuild-db-1
-          docker network ls
-          docker inspect outbuild-db-1
-
-      - name: Wait for PostgreSQL
-        run: |
-          timeout 30s bash -c 'until nc -z localhost 5432; do sleep 1; done'
-          sleep 5
-          
       - name: Run migrations
         run: npm run migrate
         env:
-          CI: true
           DB_USER: myuser
           DB_PASS: mypass
           DB_NAME: outbuild
-          DB_HOST: db
+          DB_HOST: localhost
           DB_PORT: 5432
-        
+
+      - name: Run tests
+        run: npm test
+        env:
+          DB_USER: myuser
+          DB_PASS: mypass
+          DB_NAME: outbuild
+          DB_HOST: localhost
+          DB_PORT: 5432
