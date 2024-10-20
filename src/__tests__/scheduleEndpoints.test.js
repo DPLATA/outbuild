@@ -157,4 +157,120 @@ describe('API Endpoints', () => {
       expect(response.body).toHaveProperty('message', 'invalid input syntax for type bigint: "invalidId"');
     });
   });
+
+  describe('POST /schedules/:scheduleId/activities', () => {
+    let user, schedule;
+
+    beforeEach(async () => {
+      user = await User.create({
+        username: `testuser${Date.now()}`,
+        email: `test${Date.now()}@example.com`,
+        passwordHash: `test${Date.now()}hashedpassword`
+      });
+
+      schedule = await Schedule.create({
+        userId: user.userId,
+        name: `Test Schedule ${Date.now()}`,
+        imageUrl: 'http://example.com/image.jpg'
+      });
+    });
+
+    it('should add an activity to a schedule', async () => {
+      const activityData = {
+        userId: user.userId,
+        name: 'New Activity',
+        startDate: '2023-01-01T09:00:00',
+        endDate: '2023-01-01T10:00:00'
+      };
+    
+      const response = await request(app)
+        .post(`/schedules/${schedule.scheduleId}/activities`)
+        .send(activityData);
+    
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('activityId');
+      expect(response.body.name).toBe(activityData.name);
+      expect(new Date(response.body.startDate)).toEqual(new Date(activityData.startDate));
+      expect(new Date(response.body.endDate)).toEqual(new Date(activityData.endDate));
+      expect(response.body.scheduleId).toBe(schedule.scheduleId);
+    
+      const addedActivity = await Activity.findByPk(response.body.activityId);
+      expect(addedActivity).not.toBeNull();
+      expect(addedActivity.name).toBe(activityData.name);
+    });
+
+    it('should return 400 if required fields are missing', async () => {
+      const incompleteData = {
+        name: 'Incomplete Activity'
+      };
+
+      const response = await request(app)
+        .post(`/schedules/${schedule.scheduleId}/activities`)
+        .send(incompleteData);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('message', 'User ID is required');
+    });
+
+    it('should return 404 if schedule does not exist', async () => {
+      const nonExistentId = 9999;
+      const activityData = {
+        name: 'Activity for Non-existent Schedule',
+        startDate: '2023-01-01T09:00:00',
+        endDate: '2023-01-01T10:00:00'
+      };
+
+      const response = await request(app)
+        .post(`/schedules/${nonExistentId}/activities`)
+        .send(activityData);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty('message', 'Schedule not found');
+
+    });
+
+    it('should handle invalid date formats', async () => {
+      const invalidData = {
+        name: 'Invalid Date Activity',
+        startDate: 'invalid-date',
+        endDate: 'invalid-date'
+      };
+
+      const response = await request(app)
+        .post(`/schedules/${schedule.scheduleId}/activities`)
+        .send(invalidData);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty('message');
+    });
+
+    it('should add multiple activities to the same schedule', async () => {
+      const activity1 = {
+        name: 'Activity 1',
+        startDate: '2023-01-01T09:00:00',
+        endDate: '2023-01-01T10:00:00',
+        userId: user.userId
+      };
+      
+      const activity2 = {
+        name: 'Activity 2',
+        startDate: '2023-01-01T11:00:00',
+        endDate: '2023-01-01T12:00:00',
+        userId: user.userId
+      };
+
+      await request(app)
+        .post(`/schedules/${schedule.scheduleId}/activities`)
+        .send(activity1);
+
+      await request(app)
+        .post(`/schedules/${schedule.scheduleId}/activities`)
+        .send(activity2);
+
+      const activities = await Activity.findAll({ where: { scheduleId: schedule.scheduleId } });
+      expect(activities).toHaveLength(2);
+      expect(activities[0].name).toBe('Activity 1');
+      expect(activities[1].name).toBe('Activity 2');
+    });
+  });
 });

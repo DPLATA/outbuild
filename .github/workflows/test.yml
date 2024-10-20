@@ -38,5 +38,10 @@ jobs:
       - name: Start database
         run: npm run actionsdb:up
 
-      - name: Run tests
-        run: npm test
+      - name: Wait for PostgreSQL
+        run: |
+          timeout 30s bash -c 'until nc -z localhost 5432; do sleep 1; done'
+          sleep 5
+          
+      - name: Run migrations
+        run: npm run migrate

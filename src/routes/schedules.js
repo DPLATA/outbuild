@@ -7,6 +7,7 @@ const sequelize = require('../config/database');
 const { AppError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { validate } = require('../middleware/validation');
+const { verifyScheduleOwnership } = require('../middleware/ownershipVerification');
 const schemas = require('../schemas/validation');
 
 
@@ -36,7 +37,7 @@ router.post('/', validate(schemas.createSchedule), async (req, res, next) => {
   }
 });
 
-router.get('/:scheduleId', async (req, res, next) => {
+router.get('/:scheduleId', verifyScheduleOwnership, async (req, res, next) => {
     try {
       const { scheduleId } = req.params;
   
@@ -57,7 +58,7 @@ router.get('/:scheduleId', async (req, res, next) => {
     }
 });
 
-router.post('/:scheduleId/activities', validate(schemas.createActivity), async (req, res, next) => {
+router.post('/:scheduleId/activities', verifyScheduleOwnership, validate(schemas.createActivity), async (req, res, next) => {
     try {
       const { scheduleId } = req.params;
       const { name, startDate, endDate } = req.body;
@@ -84,7 +85,7 @@ router.post('/:scheduleId/activities', validate(schemas.createActivity), async (
     }
 });
 
-router.post('/:scheduleId/bulk-activities', validate(schemas.bulkCreateActivities), async (req, res, next) => {
+router.post('/:scheduleId/bulk-activities', verifyScheduleOwnership, validate(schemas.bulkCreateActivities), async (req, res, next) => {
     const t = await sequelize.transaction();
   
     try {
