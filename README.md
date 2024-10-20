@@ -42,6 +42,44 @@
    npx sequelize-cli db:migrate
    ```
 
+## Local Testing
+
+### Prerequisites
+- Docker and Docker Compose installed
+- Node.js and npm installed
+- PostgreSQL client (optional, for direct DB access)
+
+### Setup and Run Tests
+1. Create `.env` file in project root:
+
+npm test
+npm test -- path/to/test.js
+
+## API Documentation
+
+### Prerequisites
+- Node.js and npm installed
+
+### Generating Documentation
+1. Install dependencies:
+
+```
+   npm install
+```
+2. Generate API documentation:
+
+```
+   npm run docs
+```
+3. View documentation:
+- Open docs/index.html in your web browser
+- Documentation includes all API endpoints, request/response formats, and examples
+
+### Updating Documentation
+- API documentation source is in apidoc/routes.js
+- Make changes there and re-run npm run docs to update
+- Configuration is in apidoc.json
+
 ## Additional Commands
 
 - View Docker container logs:
@@ -68,3 +106,20 @@
   Log out and log back in for the changes to take effect.
 
 - If migrations fail, check your database connection settings in `.env` and `config/config.js`.
+
+
+
+
+
+If tests fail due to DB connection, ensure Docker container is running: docker ps
+For timeout issues, try running tests with: npm test -- --detectOpenHandles
+
+
+
+
+user auth was not an explicit requirement so I avoided. JWT can be implemented for added security.
+Caching can be implemented w Redis but rn would be overkill.
+
+6. Connection pooling for database
+7. Compression for API responses
+DTOs
