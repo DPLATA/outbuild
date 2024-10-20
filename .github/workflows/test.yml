@@ -34,6 +34,8 @@ jobs:
           echo "DB_USER=${{ vars.DB_USER }}" >> .env
           echo "DB_PASS=${{ vars.DB_PASS }}" >> .env
           echo "DB_NAME=${{ vars.DB_NAME }}" >> .env
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5432" >> .env
 
       - name: Start database
         run: npm run actionsdb:up
@@ -45,3 +47,9 @@ jobs:
           
       - name: Run migrations
         run: npm run migrate
+        env:
+          DB_USER=${{ vars.DB_USER }}
+          DB_PASS=${{ vars.DB_PASS }}
+          DB_NAME=${{ vars.DB_NAME }}
+          DB_HOST=localhost"
+          DB_PORT=5432"
