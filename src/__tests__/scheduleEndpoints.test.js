@@ -277,4 +277,116 @@ describe('API Endpoints', () => {
       expect(activities[1].name).toBe('Activity 2');
     });
   });
+
+  describe('POST /schedules/:scheduleId/bulk-activities', () => {
+    let user, schedule;
+
+    beforeEach(async () => {
+      user = await User.create({
+        username: `testuser${Date.now()}`,
+        email: `test${Date.now()}@example.com`,
+        passwordHash: `test${Date.now()}hashedpassword`
+      });
+
+      schedule = await Schedule.create({
+        userId: user.userId,
+        name: `Test Schedule ${Date.now()}`,
+        imageUrl: 'http://example.com/image.jpg'
+      });
+    });
+
+    it('should add multiple activities to a schedule', async () => {
+      const activitiesData = {
+        userId: user.userId,
+        activities: [
+          {
+            name: 'Activity 1',
+            startDate: '2023-01-01T09:00:00',
+            endDate: '2023-01-01T10:00:00'
+          },
+          {
+            name: 'Activity 2',
+            startDate: '2023-01-01T11:00:00',
+            endDate: '2023-01-01T12:00:00'
+          }
+        ]
+      };
+
+      const response = await request(app)
+        .post(`/schedules/${schedule.scheduleId}/bulk-activities`)
+        .send(activitiesData);
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveLength(2);
+      expect(response.body[0]).toHaveProperty('activityId');
+      expect(response.body[0].name).toBe('Activity 1');
+      expect(response.body[1]).toHaveProperty('activityId');
+      expect(response.body[1].name).toBe('Activity 2');
+    });
+
+    it('should return 400 if activities array is empty', async () => {
+      const emptyData = { 
+        userId: user.userId,
+        activities: [] 
+      };
+
+      const response = await request(app)
+        .post(`/schedules/${schedule.scheduleId}/bulk-activities`)
+        .send(emptyData);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('message', '\"activities\" must contain at least 1 items');
+      expect(response.body).toHaveProperty('status', 'fail');
+    });
+
+    it('should return 400 if required fields are missing in any activity', async () => {
+      const incompleteData = {
+        userId: user.userId,
+        activities: [
+          {
+            name: 'Complete Activity',
+            startDate: '2023-01-01T09:00:00',
+            endDate: '2023-01-01T10:00:00'
+          },
+          {
+            name: 'Incomplete Activity'
+          }
+        ]
+      };
+
+      const response = await request(app)
+        .post(`/schedules/${schedule.scheduleId}/bulk-activities`)
+        .send(incompleteData);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('message', '\"activities[1].startDate\" is required, \"activities[1].endDate\" is required');
+      expect(response.body).toHaveProperty('status', 'fail');
+
+      const activities = await Activity.findAll({
+        where: { scheduleId: schedule.scheduleId }
+      });
+      expect(activities).toHaveLength(0);
+    });
+
+    it('should return 404 if schedule does not exist', async () => {
+      const nonExistentId = 9999;
+      const activitiesData = {
+        userId: user.userId,
+        activities: [
+          {
+            name: 'Activity for Non-existent Schedule',
+            startDate: '2023-01-01T09:00:00',
+            endDate: '2023-01-01T10:00:00'
+          }
+        ]
+      };
+
+      const response = await request(app)
+        .post(`/schedules/${nonExistentId}/bulk-activities`)
+        .send(activitiesData);
+
+        expect(response.body).toHaveProperty('message', 'Schedule not found');
+        expect(response.body).toHaveProperty('status', 'fail');
+    });
+  });
 });
