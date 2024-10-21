@@ -107,19 +107,11 @@ npm test -- path/to/test.js
 
 - If migrations fail, check your database connection settings in `.env` and `config/config.js`.
 
+- If tests fail due to DB connection, ensure Docker container is running: docker ps
 
 
-
-
-If tests fail due to DB connection, ensure Docker container is running: docker ps
-For timeout issues, try running tests with: npm test -- --detectOpenHandles
-
-
-
-
-user auth was not an explicit requirement so I avoided. JWT can be implemented for added security.
-Caching can be implemented w Redis but rn would be overkill.
-
-6. Connection pooling for database
-7. Compression for API responses
-DTOs
+## Considerations and possible future enhancements
+- User auth was not an explicit requirement so I avoided. JWT and API keys can be implemented for added security.
+- Caching can be implemented w Redis but rn would be overkill.
+- Connection pooling for database
+- DTOs
